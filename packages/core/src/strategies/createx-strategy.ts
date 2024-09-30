@@ -73,14 +73,14 @@ const CREATE_X_PRESIGNED_DEPLOYER_ADDRESS =
  *
  * @beta
  */
-export class Create2Strategy implements ExecutionStrategy {
-  public readonly name: string = "create2";
-  public readonly config: { salt: string };
+export class CreateXStrategy implements ExecutionStrategy {
+  public readonly name: string = "createX";
+  public readonly config: { salt: string; mode: "create2" | "create3" };
 
   private _deploymentLoader: DeploymentLoader | undefined;
   private _jsonRpcClient: JsonRpcClient | undefined;
 
-  constructor(config: { salt: string }) {
+  constructor(config: { salt: string; mode: "create2" | "create3" }) {
     this.config = config;
   }
 
@@ -109,7 +109,7 @@ export class Create2Strategy implements ExecutionStrategy {
     // Otherwise if we're not on a local hardhat node, throw an error
     if (chainId !== 31337) {
       throw new NomicIgnitionPluginError(
-        "create2",
+        "createX",
         `CreateX not deployed on current network ${chainId}`
       );
     }
@@ -136,24 +136,28 @@ export class Create2Strategy implements ExecutionStrategy {
       executionState.libraries
     );
 
+    const functionName =
+      this.config.mode === "create2"
+        ? "deployCreate2(bytes32,bytes)"
+        : "deployCreate3(bytes32,bytes)";
+
     const transactionOrResult = yield* executeOnchainInteractionRequest(
       executionState.id,
       {
         id: 1,
         type: NetworkInteractionType.ONCHAIN_INTERACTION,
         to: CREATE_X_ADDRESS,
-        data: encodeArtifactFunctionCall(
-          createxArtifact,
-          "deployCreate2(bytes32,bytes)",
-          [this.config.salt, bytecodeToDeploy]
-        ),
+        data: encodeArtifactFunctionCall(createxArtifact, functionName, [
+          this.config.salt,
+          bytecodeToDeploy,
+        ]),
         value: executionState.value,
       },
 
       (returnData) =>
         decodeArtifactFunctionCallResult(
           createxArtifact,
-          "deployCreate2(bytes32,bytes)",
+          functionName,
           returnData
         ),
       (returnData) => decodeArtifactCustomError(createxArtifact, returnData)

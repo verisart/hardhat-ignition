@@ -4,7 +4,7 @@ import { ExecutionStrategy } from "../internal/execution/types/execution-strateg
 import { StrategyConfig } from "../types/deploy";
 
 import { BasicStrategy } from "./basic-strategy";
-import { Create2Strategy } from "./create2-strategy";
+import { CreateXStrategy } from "./createx-strategy";
 
 export function resolveStrategy<StrategyT extends keyof StrategyConfig>(
   strategyName: StrategyT | undefined,
@@ -18,6 +18,7 @@ export function resolveStrategy<StrategyT extends keyof StrategyConfig>(
     case "basic":
       return new BasicStrategy();
     case "create2":
+    case "create3":
       if (strategyConfig === undefined) {
         throw new IgnitionError(ERRORS.STRATEGIES.MISSING_CONFIG, {
           strategyName,
@@ -39,7 +40,10 @@ export function resolveStrategy<StrategyT extends keyof StrategyConfig>(
         });
       }
 
-      return new Create2Strategy({ salt: strategyConfig.salt });
+      return new CreateXStrategy({
+        salt: strategyConfig.salt,
+        mode: strategyName,
+      });
     default:
       throw new IgnitionError(ERRORS.STRATEGIES.UNKNOWN_STRATEGY, {
         strategyName,

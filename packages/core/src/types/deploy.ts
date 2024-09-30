@@ -224,4 +224,7 @@ export interface StrategyConfig {
   create2: {
     salt: string;
   };
+  create3: {
+    salt: string;
+  };
 }
